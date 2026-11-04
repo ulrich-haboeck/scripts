@@ -1,7 +1,7 @@
 #!/usr/bin/env sage
 """FRI-Binius proof size optimizer. Given initial witness size and rate, determines the folding parameters
 achieving minimal proof size.
-Assumes packing into L = GF(2^291) to accomodate list-decoding soundness. Hashes are 256 bits.
+Assumes packing into L = GF(2^256) to accomodate list-decoding soundness. Hashes are 256 bits.
 
 Run: sage frib_optimizer.sage
      sage frib_optimizer.sage --min-w 20 --max-w 26 --step 2
@@ -13,7 +13,7 @@ import argparse
 import math
 from functools import lru_cache
 
-FIELD_BYTES = 24
+FIELD_BYTES = 32
 HASH_BYTES = 32
 
 
@@ -88,7 +88,7 @@ def optimize(w, rate_bits, lambda_bits, grind_bits,
         raise ValueError('w must be at least 8')
     if optimize_for not in ('compressed', 'uncompressed'):
         raise ValueError('optimize_for must be compressed or uncompressed')
-    
+     
     # determine best possible list size for proximity testing
     list_bits = max_list_size(w-8+rate_bits, lambda_bits)
     # sanity check.
@@ -178,8 +178,8 @@ def optimize(w, rate_bits, lambda_bits, grind_bits,
 
     out = solve(w - 8,zk).copy()
 
-    # add Galois orbit eval claims
-    overhead = FIELD_BYTES*8* FIELD_BYTES
+    # add Galois orbit of eval claim in GF(2^128) is contained in GF(2^128)
+    overhead = (4*FIELD_BYTES)*(FIELD_BYTES/2)
     out['compressed'] = out['compressed'] + overhead
     out['uncompressed'] = out['uncompressed'] + overhead 
     out.update(
@@ -251,7 +251,7 @@ def print_detail(result):
             )
         )
         
-    print('  Terminal: %d elements, %s' % (result['terminal_elements'], fmt_kib(16*result['terminal_elements'])))
+    print('  Terminal: %d elements, %s' % (result['terminal_elements'], fmt_kib(FIELD_BYTES*result['terminal_elements'])))
 
 # ============================================================
 # main 
