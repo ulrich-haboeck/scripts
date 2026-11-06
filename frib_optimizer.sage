@@ -107,14 +107,12 @@ def optimize(w, rate_bits, lambda_bits, grind_bits,
         # reduction exponent ell=0, always terminates the protocol
         ell = 0
         h = m - ell + rate_bits 
-        # leaf size, includes the mask of witness size
-        b = (1 << ell) 
 
         if zk == 'true':
             # Batching step with mask of witness size, then reveal. 
             # Includes Merkle leaf blinder of size HASH_BYTES
-            print("hey")
-            opened = (FIELD_BYTES * b * 2 + HASH_BYTES) * t  
+            b = ((1 << ell) + 1) * FIELD_BYTES + HASH_BYTES
+            opened = b * t  
             uncompressed_auth = HASH_BYTES * t * h
             compressed_auth = HASH_BYTES * expected_multiproof_hashes(h, t)
             terminal_bytes = FIELD_BYTES * (1 << (m-ell))
@@ -123,7 +121,8 @@ def optimize(w, rate_bits, lambda_bits, grind_bits,
                 compressed=opened + compressed_auth + terminal_bytes,
                 uncompressed=opened + uncompressed_auth + terminal_bytes,
                 rounds=[dict(
-                            ell=ell, 
+                            ell= ell,
+                            zk= zk,
                             height=h,
                             opened_bytes=opened,
                             compressed_auth_bytes=compressed_auth,
@@ -145,15 +144,16 @@ def optimize(w, rate_bits, lambda_bits, grind_bits,
         
         # over all non-trivial reduction exponents
         for ell in range(1, m+1):
-            b = 1 << ell
+            # treee height
             h = m - ell + rate_bits
-
+            # leaf size
             if zk == 'true':
-                # mask of witness size doubles the size of the Merkle leaves
-                opened = FIELD_BYTES * t * b * 2
+                # with mask and leaf blinder
+                b = ((1 << ell) + 1 ) * FIELD_BYTES + HASH_BYTES
             else:
-                opened = FIELD_BYTES * t * b 
-
+                b = (1 << ell) * FIELD_BYTES 
+            
+            opened = b * t
             uncompressed_auth = HASH_BYTES * t * h
             compressed_auth = HASH_BYTES * expected_multiproof_hashes(h, t)
 
@@ -163,7 +163,8 @@ def optimize(w, rate_bits, lambda_bits, grind_bits,
             candidate = dict(
                 compressed=opened + compressed_auth + child['compressed'],
                 uncompressed=opened + uncompressed_auth + child['uncompressed'],
-                rounds=[dict(ell=ell, 
+                rounds=[dict(ell= ell,
+                            zk= zk, 
                             height=h,
                             opened_bytes=opened,
                             compressed_auth_bytes=compressed_auth,
@@ -240,18 +241,31 @@ def print_detail(result):
     
     for i, round_info in enumerate(result['rounds'], 1):
         x = round_info
-
-        print('  Round %d: 2^%d rows, 2^%d cols,    opened: %s,     auth: %s (%s),  tot: %s (%s)' %
-            (i, 
-            x['ell'], 
-            x['height'], 
-            fmt_kib(x['opened_bytes']),
-            fmt_kib(x['compressed_auth_bytes']), 
-            fmt_kib(x['uncompressed_auth_bytes']),
-            fmt_kib(x['compressed']), 
-            fmt_kib(x['uncompressed'])
+        if x['zk'] == 'true':
+            print('  Round %d: 2^%d (+ 1) rows, 2^%d cols,    opened: %s,     auth: %s (%s),  tot: %s (%s)' %
+                (i, 
+                x['ell'], 
+                x['height'], 
+                fmt_kib(x['opened_bytes']),
+                fmt_kib(x['compressed_auth_bytes']), 
+                fmt_kib(x['uncompressed_auth_bytes']),
+                fmt_kib(x['compressed']), 
+                fmt_kib(x['uncompressed'])
+                )
             )
-        )
+        else: 
+            print('  Round %d: 2^%d rows, 2^%d cols,    opened: %s,     auth: %s (%s),  tot: %s (%s)' %
+                (i, 
+                x['ell'], 
+                x['height'], 
+                fmt_kib(x['opened_bytes']),
+                fmt_kib(x['compressed_auth_bytes']), 
+                fmt_kib(x['uncompressed_auth_bytes']),
+                fmt_kib(x['compressed']), 
+                fmt_kib(x['uncompressed'])
+                )
+            )
+
         
     print('  Terminal: %d elements, %s' % (result['terminal_elements'], fmt_kib(FIELD_BYTES*result['terminal_elements'])))
 
