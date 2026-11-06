@@ -112,7 +112,9 @@ def optimize(w, rate_bits, lambda_bits, grind_bits,
 
         if zk == 'true':
             # Batching step with mask of witness size, then reveal. 
-            opened = FIELD_BYTES * t * b * 2
+            # Includes Merkle leaf blinder of size HASH_BYTES
+            print("hey")
+            opened = (FIELD_BYTES * b * 2 + HASH_BYTES) * t  
             uncompressed_auth = HASH_BYTES * t * h
             compressed_auth = HASH_BYTES * expected_multiproof_hashes(h, t)
             terminal_bytes = FIELD_BYTES * (1 << (m-ell))
