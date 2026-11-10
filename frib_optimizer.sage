@@ -322,7 +322,9 @@ def main():
         for w in ws:
             result = optimize(w, r, args.sec, args.grind, zk=args.zk, optimize_for=args.optimize_for)
             # total number of hashes for the verifier
-            hashes = sum(x['uncompressed_auth_bytes'] for x in result['rounds']) / HASH_BYTES
+            hashes = ceil(
+                (sum(x['compressed_auth_bytes'] for x in result['rounds']) + sum(x['opened_bytes'] for x in result['rounds'])) / HASH_BYTES
+            )
 
             print('%-10s %-8s %-12s %-10s %-16s %-16s %-14s %-8s %s' %
                   ('2^%d' % w, 
