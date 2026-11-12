@@ -111,7 +111,7 @@ def optimize(w, rate_bits, lambda_bits, grind_bits,
         if zk == 'true':
             # Batching step with mask of witness size, then reveal. 
             # Includes Merkle leaf blinder of size HASH_BYTES
-            b = ((1 << ell) + 1) * FIELD_BYTES + HASH_BYTES
+            b = 2 * (1 << ell) * FIELD_BYTES + HASH_BYTES
             opened = b * t  
             uncompressed_auth = HASH_BYTES * t * h
             compressed_auth = HASH_BYTES * expected_multiproof_hashes(h, t)
@@ -242,7 +242,7 @@ def print_detail(result):
     for i, round_info in enumerate(result['rounds'], 1):
         x = round_info
         if x['zk'] == 'true':
-            print('  Round %d: 2^%d (+ 1) rows, 2^%d cols,    opened: %s,     auth: %s (%s),  tot: %s (%s)' %
+            print('  Round %d: 2^%d (* 2) rows, 2^%d cols,    opened: %s,     auth: %s (%s),  tot: %s (%s)' %
                 (i, 
                 x['ell'], 
                 x['height'], 
